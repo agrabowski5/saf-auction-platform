@@ -1,0 +1,312 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  hashedPassword String
+  role           String   @default("consumer")
+  company        String?
+  isDemo         Boolean  @default(false)
+  verified       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  bids          Bid[]
+  asks          Ask[]
+  facilities    ProductionFacility[]
+  certificates  Certificate[]
+  notifications Notification[]
+  auditLogs     AuditLog[]  @relation("AuditActor")
+  sessions      Session[]
+  accounts      Account[]
+
+  @@index([role])
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================
+// PRODUCTION FACILITIES
+// ============================================================
+
+model ProductionFacility {
+  id             String   @id @default(cuid())
+  producerId     String
+  name           String
+  location       String
+  safCategory    String
+  annualCapacity Float
+  ciScore        Float
+  certifications String   @default("[]")
+  feedstock      String
+  status         String   @default("active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  producer     User          @relation(fields: [producerId], references: [id])
+  asks         Ask[]
+  certificates Certificate[]
+
+  @@index([producerId])
+  @@index([safCategory])
+}
+
+// ============================================================
+// AUCTIONS
+// ============================================================
+
+model Auction {
+  id                 String   @id @default(cuid())
+  title              String
+  description        String?
+  status             String   @default("draft")
+  auctionType        String   @default("vickrey")
+  categories         String   @default("[]")
+  startTime          DateTime
+  endTime            DateTime
+  reservePricePerGal Float?
+  aggregateReserve   Float?
+  minBidQuantity     Float    @default(0)
+  maxBidQuantity     Float?
+  substitutionMatrix String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  bids           Bid[]
+  asks           Ask[]
+  auctionResults AuctionResult[]
+  allocations    Allocation[]
+
+  @@index([status])
+  @@index([startTime])
+}
+
+// ============================================================
+// BIDS (Consumer submits)
+// ============================================================
+
+model Bid {
+  id                  String   @id @default(cuid())
+  auctionId           String
+  bidderId            String
+  safCategory         String
+  quantity            Float
+  maxPrice            Float
+  categoryPreferences String?
+  allowSubstitution   Boolean  @default(false)
+  status              String   @default("active")
+  isSealed            Boolean  @default(true)
+  clearedPrice        Float?
+  clearedQuantity     Float?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  auction     Auction      @relation(fields: [auctionId], references: [id])
+  bidder      User         @relation(fields: [bidderId], references: [id])
+  allocations Allocation[]
+
+  @@index([auctionId])
+  @@index([bidderId])
+  @@index([auctionId, safCategory])
+}
+
+// ============================================================
+// ASKS (Producer submits)
+// ============================================================
+
+model Ask {
+  id              String   @id @default(cuid())
+  auctionId       String
+  producerId      String
+  facilityId      String?
+  safCategory     String
+  quantity        Float
+  minPrice        Float
+  categoryOffers  String?
+  status          String   @default("active")
+  isSealed        Boolean  @default(true)
+  clearedPrice    Float?
+  clearedQuantity Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  auction     Auction             @relation(fields: [auctionId], references: [id])
+  producer    User                @relation(fields: [producerId], references: [id])
+  facility    ProductionFacility? @relation(fields: [facilityId], references: [id])
+  allocations Allocation[]
+
+  @@index([auctionId])
+  @@index([producerId])
+  @@index([auctionId, safCategory])
+}
+
+// ============================================================
+// AUCTION RESULTS
+// ============================================================
+
+model AuctionResult {
+  id              String   @id @default(cuid())
+  auctionId       String
+  mechanism       String
+  totalVolume     Float
+  totalValue      Float
+  averagePrice    Float
+  categoryResults String
+  socialWelfare   Float?
+  revenueRatio    Float?
+  reserveMet      Boolean  @default(true)
+  clearedAt       DateTime @default(now())
+
+  auction     Auction      @relation(fields: [auctionId], references: [id])
+  allocations Allocation[]
+
+  @@index([auctionId])
+}
+
+// ============================================================
+// ALLOCATIONS
+// ============================================================
+
+model Allocation {
+  id              String   @id @default(cuid())
+  auctionResultId String
+  auctionId       String
+  bidId           String
+  askId           String
+  safCategory     String
+  quantity        Float
+  pricePerGallon  Float
+  totalPrice      Float
+  vcgPayment      Float?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+
+  auctionResult AuctionResult @relation(fields: [auctionResultId], references: [id])
+  auction       Auction       @relation(fields: [auctionId], references: [id])
+  bid           Bid           @relation(fields: [bidId], references: [id])
+  ask           Ask           @relation(fields: [askId], references: [id])
+  certificate   Certificate?
+
+  @@index([auctionResultId])
+  @@index([bidId])
+  @@index([askId])
+}
+
+// ============================================================
+// CERTIFICATES (Phase 3)
+// ============================================================
+
+model Certificate {
+  id                 String    @id @default(cuid())
+  holderId           String
+  facilityId         String?
+  allocationId       String?   @unique
+  certType           String
+  certNumber         String    @unique
+  registryScheme     String?
+  safCategory        String
+  quantity           Float
+  ciScore            Float?
+  vintageYear        Int
+  verificationStatus String    @default("pending")
+  verifiedAt         DateTime?
+  expiresAt          DateTime?
+  documentPath       String?
+  metadata           String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  holder     User                @relation(fields: [holderId], references: [id])
+  facility   ProductionFacility? @relation(fields: [facilityId], references: [id])
+  allocation Allocation?         @relation(fields: [allocationId], references: [id])
+
+  @@index([holderId])
+  @@index([certType])
+  @@index([verificationStatus])
+}
+
+// ============================================================
+// AUDIT LOG (Phase 4)
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([entityType, entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// ============================================================
+// NOTIFICATIONS (Phase 4)
+// ============================================================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, read])
+  @@index([createdAt])
+}
