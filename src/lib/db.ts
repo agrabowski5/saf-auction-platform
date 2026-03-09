@@ -7,8 +7,9 @@ const globalForPrisma = globalThis as unknown as {
 function createPrismaClient(): PrismaClient {
   if (process.env.TURSO_DATABASE_URL) {
     // Turso (LibSQL) for production / Vercel
+    // Use HTTP client to avoid native bindings in serverless
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createClient } = require("@libsql/client");
+    const { createClient } = require("@libsql/client/http");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { PrismaLibSQL } = require("@prisma/adapter-libsql");
     const libsql = createClient({
