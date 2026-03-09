@@ -412,6 +412,7 @@ export async function POST() {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Demo seed error:", error);
-    return NextResponse.json({ error: "Failed to seed demo data" }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: "Failed to seed demo data", details: message }, { status: 500 });
   }
 }
