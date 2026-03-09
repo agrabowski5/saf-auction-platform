@@ -22,3 +22,6 @@ prisma/migrations
 .vscode
 .idea
 cookies.txt
+
+.vercel
+nul

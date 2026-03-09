@@ -16,12 +16,23 @@ export function DemoBanner() {
 
   async function switchRole(role: UserRole) {
     if (role === currentRole) return;
-    await fetch("/api/demo/switch-persona", {
+    const res = await fetch("/api/demo/switch-persona", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
     });
-    await update({ role });
+
+    if (!res.ok) return;
+
+    const userData = await res.json();
+    // Pass full user identity so the JWT callback can switch completely
+    await update({
+      role: userData.role,
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      company: userData.company,
+    });
     router.push(`/${role}`);
     router.refresh();
   }

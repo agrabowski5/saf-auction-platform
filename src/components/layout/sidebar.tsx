@@ -16,6 +16,12 @@ import {
   ScrollText,
   ShieldAlert,
   Fuel,
+  Store,
+  ArrowLeftRight,
+  Target,
+  ShoppingCart,
+  FileText,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -35,6 +41,12 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Users,
   ScrollText,
   ShieldAlert,
+  Store,
+  ArrowLeftRight,
+  Target,
+  ShoppingCart,
+  FileText,
+  Globe,
 };
 
 interface NavItem {
@@ -49,22 +61,28 @@ const NAV_ITEMS: Record<UserRole, NavItem[]> = {
     { label: "My Asks", href: "/producer/asks", icon: "TrendingUp" },
     { label: "Facilities", href: "/producer/facilities", icon: "Factory" },
     { label: "Certificates", href: "/producer/certificates", icon: "FileCheck" },
+    { label: "Transactions", href: "/producer/transactions", icon: "ArrowLeftRight" },
     { label: "Analytics", href: "/producer/analytics", icon: "BarChart3" },
   ],
   consumer: [
     { label: "Dashboard", href: "/consumer", icon: "LayoutDashboard" },
+    { label: "Emissions", href: "/consumer/emissions", icon: "Leaf" },
+    { label: "Targets", href: "/consumer/targets", icon: "Target" },
+    { label: "Marketplace", href: "/consumer/marketplace", icon: "ShoppingCart" },
+    { label: "Book & Claim", href: "/consumer/book-claim", icon: "ArrowLeftRight" },
+    { label: "Demand Pools", href: "/consumer/pools", icon: "Users" },
     { label: "My Bids", href: "/consumer/bids", icon: "Gavel" },
     { label: "Certificates", href: "/consumer/certificates", icon: "FileCheck" },
-    { label: "Emissions", href: "/consumer/emissions", icon: "Leaf" },
-    { label: "Compliance", href: "/consumer/compliance", icon: "ClipboardCheck" },
-    { label: "Analytics", href: "/consumer/analytics", icon: "BarChart3" },
+    { label: "Reports", href: "/consumer/reports", icon: "FileText" },
   ],
   admin: [
     { label: "Dashboard", href: "/admin", icon: "LayoutDashboard" },
+    { label: "Emissions", href: "/admin/emissions", icon: "Globe" },
     { label: "Auctions", href: "/admin/auctions", icon: "Gavel" },
+    { label: "Transactions", href: "/admin/transactions", icon: "ArrowLeftRight" },
+    { label: "Demand Pools", href: "/admin/pools", icon: "Users" },
     { label: "Users", href: "/admin/users", icon: "Users" },
     { label: "Audit Log", href: "/admin/audit", icon: "ScrollText" },
-    { label: "Fraud Detection", href: "/admin/fraud", icon: "ShieldAlert" },
     { label: "Analytics", href: "/admin/analytics", icon: "BarChart3" },
   ],
 };
@@ -78,9 +96,9 @@ export function Sidebar() {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-card">
       <div className="flex h-14 items-center gap-2 border-b px-4">
-        <Fuel className="h-6 w-6 text-primary" />
+        <Globe className="h-6 w-6 text-primary" />
         <div>
-          <h1 className="text-sm font-bold tracking-tight">SAF Auction</h1>
+          <h1 className="text-sm font-bold tracking-tight">Carbon Abatement</h1>
           <p className="text-[10px] text-muted-foreground">Marketplace</p>
         </div>
       </div>

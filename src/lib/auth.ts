@@ -46,9 +46,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.company = user.company;
         token.isDemo = user.isDemo;
       }
-      // Allow demo mode persona switching
-      if (trigger === "update" && session?.role) {
+      // Allow demo mode persona switching — update full identity
+      if (trigger === "update" && token.isDemo && session?.role) {
         token.role = session.role;
+        if (session.id) token.id = session.id;
+        if (session.name) token.name = session.name;
+        if (session.email) token.email = session.email;
+        if (session.company !== undefined) token.company = session.company;
       }
       return token;
     },

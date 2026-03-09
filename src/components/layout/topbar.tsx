@@ -23,7 +23,7 @@ export function Topbar() {
       <header className="flex h-14 items-center justify-between border-b bg-card px-6">
         <div className="flex items-center gap-4">
           <h2 className="text-sm font-semibold text-muted-foreground">
-            SAF Auction Marketplace
+            Carbon Abatement Marketplace
           </h2>
         </div>
 

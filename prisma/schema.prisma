@@ -31,6 +31,13 @@ model User {
   sessions      Session[]
   accounts      Account[]
 
+  // Emissions & Marketplace relations
+  emissionsInventories   EmissionsInventory[]
+  abatementTargets       AbatementTarget[]
+  bookClaimPurchases     BookClaimTransaction[] @relation("BookClaimBuyer")
+  bookClaimSales         BookClaimTransaction[] @relation("BookClaimSeller")
+  demandPoolParticipants DemandPoolParticipant[]
+
   @@index([role])
   @@index([email])
 }
@@ -120,6 +127,7 @@ model Auction {
   asks           Ask[]
   auctionResults AuctionResult[]
   allocations    Allocation[]
+  demandPools    DemandPool[]
 
   @@index([status])
   @@index([startTime])
@@ -263,6 +271,7 @@ model Certificate {
   holder     User                @relation(fields: [holderId], references: [id])
   facility   ProductionFacility? @relation(fields: [facilityId], references: [id])
   allocation Allocation?         @relation(fields: [allocationId], references: [id])
+  bookClaimTransactions BookClaimTransaction[]
 
   @@index([holderId])
   @@index([certType])
@@ -309,4 +318,197 @@ model Notification {
 
   @@index([userId, read])
   @@index([createdAt])
+}
+
+// ============================================================
+// SECTORS & ABATEMENT TYPES
+// ============================================================
+
+model Sector {
+  id    String @id @default(cuid())
+  code  String @unique
+  name  String
+  color String
+  icon  String
+
+  abatementTypes       AbatementType[]
+  emissionEntries      EmissionEntry[]
+  abatementTargets     AbatementTarget[]
+  bookClaimTransactions BookClaimTransaction[]
+  demandPools          DemandPool[]
+}
+
+model AbatementType {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  description String?
+  unit        String  @default("tCO2e")
+  sectorCode  String
+  ciReduction Float?
+  isVerified  Boolean @default(true)
+
+  sector               Sector                @relation(fields: [sectorCode], references: [code])
+  bookClaimTransactions BookClaimTransaction[]
+  demandPools          DemandPool[]
+
+  @@index([sectorCode])
+}
+
+// ============================================================
+// EMISSIONS TRACKING
+// ============================================================
+
+model EmissionsInventory {
+  id           String   @id @default(cuid())
+  userId       String
+  year         Int
+  scope1Total  Float    @default(0)
+  scope2Total  Float    @default(0)
+  scope3Total  Float    @default(0)
+  baselineYear Boolean  @default(false)
+  status       String   @default("draft") // draft, submitted, verified
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id])
+  entries EmissionEntry[]
+
+  @@unique([userId, year])
+  @@index([userId])
+  @@index([year])
+}
+
+model EmissionEntry {
+  id             String   @id @default(cuid())
+  inventoryId    String
+  scope          Int      // 1, 2, 3
+  ghgCategory    String   // e.g. "scope3_cat6" for business travel
+  sectorCode     String
+  description    String
+  activityData   Float?   // quantity of activity (e.g. km traveled, kWh used)
+  activityUnit   String?  // unit of activity data
+  emissionFactor Float?   // kgCO2e per unit
+  tCO2e          Float    // total emissions in tonnes CO2e
+  source         String?  // data source
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  inventory EmissionsInventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  sector    Sector             @relation(fields: [sectorCode], references: [code])
+
+  @@index([inventoryId])
+  @@index([scope])
+  @@index([sectorCode])
+  @@index([ghgCategory])
+}
+
+// ============================================================
+// ABATEMENT TARGETS
+// ============================================================
+
+model AbatementTarget {
+  id               String   @id @default(cuid())
+  userId           String
+  sectorCode       String
+  year             Int
+  targetReduction  Float    // target tCO2e to reduce
+  currentReduction Float    @default(0) // achieved so far
+  status           String   @default("active") // active, achieved, missed
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id])
+  sector Sector @relation(fields: [sectorCode], references: [code])
+
+  @@unique([userId, sectorCode, year])
+  @@index([userId])
+  @@index([sectorCode])
+}
+
+// ============================================================
+// BOOK & CLAIM TRANSACTIONS
+// ============================================================
+
+model BookClaimTransaction {
+  id                String    @id @default(cuid())
+  buyerId           String?
+  sellerId          String
+  certificateId     String?
+  abatementTypeCode String
+  sectorCode        String
+  quantity          Float     // tCO2e
+  pricePerUnit      Float?
+  totalPrice        Float?
+  status            String    @default("registered") // registered, listed, purchased, claimed, retired, cancelled
+  registeredAt      DateTime  @default(now())
+  listedAt          DateTime?
+  purchasedAt       DateTime?
+  claimedAt         DateTime?
+  retiredAt         DateTime?
+  poolId            String?
+  metadata          String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  buyer         User?         @relation("BookClaimBuyer", fields: [buyerId], references: [id])
+  seller        User          @relation("BookClaimSeller", fields: [sellerId], references: [id])
+  certificate   Certificate?  @relation(fields: [certificateId], references: [id])
+  abatementType AbatementType @relation(fields: [abatementTypeCode], references: [code])
+  sector        Sector        @relation(fields: [sectorCode], references: [code])
+  demandPool    DemandPool?   @relation(fields: [poolId], references: [id])
+
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@index([sectorCode])
+  @@index([abatementTypeCode])
+}
+
+// ============================================================
+// DEMAND POOLS (Collective Purchasing)
+// ============================================================
+
+model DemandPool {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  sectorCode        String
+  abatementTypeCode String
+  targetQuantity    Float     // total tCO2e desired
+  currentQuantity   Float     @default(0)
+  maxPricePerUnit   Float?
+  status            String    @default("forming") // forming, active, clearing, completed, cancelled
+  auctionId         String?
+  deadline          DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sector        Sector        @relation(fields: [sectorCode], references: [code])
+  abatementType AbatementType @relation(fields: [abatementTypeCode], references: [code])
+  auction       Auction?      @relation(fields: [auctionId], references: [id])
+  participants  DemandPoolParticipant[]
+  transactions  BookClaimTransaction[]
+
+  @@index([sectorCode])
+  @@index([status])
+  @@index([abatementTypeCode])
+}
+
+model DemandPoolParticipant {
+  id                String   @id @default(cuid())
+  poolId            String
+  userId            String
+  committedQuantity Float    // tCO2e this participant wants
+  allocatedQuantity Float    @default(0)
+  status            String   @default("committed") // committed, allocated, withdrawn
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  pool DemandPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id])
+
+  @@unique([poolId, userId])
+  @@index([poolId])
+  @@index([userId])
 }

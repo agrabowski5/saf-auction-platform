@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SAF Auction Marketplace",
-  description: "Sustainable Aviation Fuel auction platform with Vickrey-Clarke-Groves mechanism",
+  title: "Carbon Abatement Marketplace",
+  description: "All-in-one carbon emissions tracking and sector-matched abatement marketplace",
 };
 
 export default function RootLayout({

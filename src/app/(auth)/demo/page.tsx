@@ -9,23 +9,23 @@ import { Factory, Plane, Shield } from "lucide-react";
 
 const PERSONAS = [
   {
-    role: "producer",
-    label: "SAF Producer",
-    description: "Neste Oil - Submit asks, manage HEFA production facility",
-    icon: Factory,
-    color: "text-green-400",
-  },
-  {
     role: "consumer",
-    label: "SAF Consumer (Airline)",
-    description: "Delta Air Lines - Submit bids, track emissions and compliance",
+    label: "Company / Emitter",
+    description: "Delta Air Lines - Track emissions, purchase abatements, manage reduction targets",
     icon: Plane,
     color: "text-blue-400",
   },
   {
+    role: "producer",
+    label: "Abatement Provider",
+    description: "Neste Oil - List abatements, manage facilities, track transactions",
+    icon: Factory,
+    color: "text-green-400",
+  },
+  {
     role: "admin",
     label: "Market Administrator",
-    description: "SAF Exchange - Create auctions, clear markets, monitor activity",
+    description: "Platform Admin - Manage auctions, oversee transactions, platform analytics",
     icon: Shield,
     color: "text-purple-400",
   },
@@ -34,27 +34,40 @@ const PERSONAS = [
 export default function DemoPage() {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function enterDemo(role: string) {
     setLoading(role);
+    setError(null);
 
-    // Seed demo data
-    await fetch("/api/demo/seed", { method: "POST" });
+    try {
+      // Seed demo data
+      const seedRes = await fetch("/api/demo/seed", { method: "POST" });
+      if (!seedRes.ok) {
+        setError("Failed to initialize demo data. Please try again.");
+        setLoading(null);
+        return;
+      }
 
-    // Login as demo user
-    const result = await signIn("credentials", {
-      email: `demo-${role}@saf-auction.com`,
-      password: "demo-password-123",
-      redirect: false,
-    });
+      // Login as demo user
+      const result = await signIn("credentials", {
+        email: `demo-${role}@saf-auction.com`,
+        password: "demo-password-123",
+        redirect: false,
+      });
 
-    if (result?.error) {
+      if (result?.error) {
+        setError(`Login failed: ${result.error}. Please try again.`);
+        setLoading(null);
+        return;
+      }
+
+      router.push(`/${role}`);
+      router.refresh();
+    } catch {
+      setError("An unexpected error occurred. Please try again.");
       setLoading(null);
-      return;
     }
-
-    router.push(`/${role}`);
-    router.refresh();
   }
 
   return (
@@ -67,6 +80,12 @@ export default function DemoPage() {
           </CardDescription>
         </CardHeader>
       </Card>
+
+      {error && (
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="p-4 text-sm text-destructive">{error}</CardContent>
+        </Card>
+      )}
 
       {PERSONAS.map((persona) => {
         const Icon = persona.icon;
