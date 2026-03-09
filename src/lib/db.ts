@@ -19,9 +19,11 @@ function createPrismaClient(): PrismaClient {
     return new PrismaClient({ adapter: new PrismaLibSQL(libsql) });
   }
 
-  // Local SQLite for development
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { PrismaBetterSqlite3 } = require("@prisma/adapter-better-sqlite3");
+  // Local SQLite for development — use eval to prevent bundler
+  // from analyzing and including native better-sqlite3 bindings
+  // eslint-disable-next-line no-eval
+  const dynamicRequire = eval("require") as NodeRequire;
+  const { PrismaBetterSqlite3 } = dynamicRequire("@prisma/adapter-better-sqlite3");
   return new PrismaClient({
     adapter: new PrismaBetterSqlite3({
       url: process.env.DATABASE_URL ?? "file:./dev.db",
