@@ -8,6 +8,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Plus, Factory } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function FacilitiesPage() {
   const session = await auth();
   const facilities = await db.productionFacility.findMany({

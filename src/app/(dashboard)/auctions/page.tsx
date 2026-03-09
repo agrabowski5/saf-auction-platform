@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Clock, Gavel } from "lucide-react";
 import { format } from "date-fns";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AuctionsPage() {
   const auctions = await db.auction.findMany({
     where: { status: { in: ["open", "closed", "settled"] } },

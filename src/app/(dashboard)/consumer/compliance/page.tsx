@@ -7,6 +7,8 @@ import { calculateInset } from "@/lib/compliance/inset";
 import type { SAFCategoryCode } from "@/lib/constants/saf-categories";
 import { COMPLIANCE_SCHEMES } from "@/lib/constants/compliance-schemes";
 
+export const dynamic = 'force-dynamic';
+
 export default async function CompliancePage() {
   const session = await auth();
   const allocations = await db.allocation.findMany({

@@ -5,6 +5,8 @@ import { StatCard } from "@/components/shared/stat-card";
 import { DollarSign, TrendingUp, Factory, Gavel } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProducerAnalyticsPage() {
   const session = await auth();
   const userId = session?.user?.id;

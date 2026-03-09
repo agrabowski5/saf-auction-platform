@@ -10,6 +10,8 @@ import Link from "next/link";
 import { Clock, TrendingUp, TrendingDown, Gavel } from "lucide-react";
 import { SAF_CATEGORIES, type SAFCategoryCode } from "@/lib/constants/saf-categories";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AuctionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await auth();

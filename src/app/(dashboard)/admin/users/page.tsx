@@ -3,6 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 
+export const dynamic = 'force-dynamic';
+
 export default async function UsersPage() {
   const users = await db.user.findMany({ orderBy: { createdAt: "desc" } });
 

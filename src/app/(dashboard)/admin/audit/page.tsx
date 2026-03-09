@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ScrollText } from "lucide-react";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AuditLogPage() {
   const logs = await db.auditLog.findMany({
     include: { actor: { select: { name: true, email: true } } },

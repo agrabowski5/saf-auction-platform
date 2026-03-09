@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { ClearAuctionButton } from "@/components/auctions/clear-auction-button";
 import { UpdateStatusButton } from "@/components/auctions/update-status-button";
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminAuctionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const auction = await db.auction.findUnique({
