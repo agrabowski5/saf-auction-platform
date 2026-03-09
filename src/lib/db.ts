@@ -11,12 +11,12 @@ function createPrismaClient(): PrismaClient {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { createClient } = require("@libsql/client/http");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { PrismaLibSQL } = require("@prisma/adapter-libsql");
+    const { PrismaLibSql } = require("@prisma/adapter-libsql");
     const libsql = createClient({
       url: process.env.TURSO_DATABASE_URL,
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
-    return new PrismaClient({ adapter: new PrismaLibSQL(libsql) });
+    return new PrismaClient({ adapter: new PrismaLibSql(libsql) });
   }
 
   // Local SQLite for development — use eval to prevent bundler
